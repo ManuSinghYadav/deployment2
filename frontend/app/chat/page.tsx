@@ -2,17 +2,60 @@
 
 import { useState } from "react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function ChatPage() {
   const [message, setMessage] = useState("");
+  const [response, setResponse] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
-    if (!message.trim()) return;
+    const query = message.trim();
 
-    console.log("Message:", message);
+    if (!query || loading) return;
 
-    setMessage("");
+    setLoading(true);
+    setResponse("");
+
+    try {
+      const res = await fetch(`${API_URL}/query`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+      
+        console.error("Backend error:", {
+          status: res.status,
+          statusText: res.statusText,
+          body: errorText,
+        });
+      
+        throw new Error(
+          `Request failed: ${res.status} ${res.statusText}`
+        );
+      }
+
+      const data = await res.json();
+
+      setResponse(data);
+      setMessage("");
+    } catch (error) {
+      console.error("Chat request failed:", error);
+      setResponse("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -20,30 +63,45 @@ export default function ChatPage() {
       <div className="chat-background" />
 
       <section className="chat-container">
-        <div className="chat-header">
-          <div className="status-dot" />
-          <span>LLM Lab</span>
-        </div>
-
         <div className="chat-content">
-          <div className="welcome-message">
-            <div className="welcome-icon">✦</div>
+          {!response && !loading ? (
+            <div className="welcome-message">
+              <div className="welcome-icon">✦</div>
 
-            <h1>What are you curious about?</h1>
+              <h1>What are you curious about?</h1>
 
-            <p>
-              Ask something, explore an idea, or throw a difficult problem
-              at the model.
-            </p>
-          </div>
+              <p>
+                Ask something, explore an idea, or throw a difficult
+                problem at the model.
+              </p>
+            </div>
+          ) : (
+            <div className="response-container">
+              <div className="user-message">
+                {message}
+              </div>
+
+              {loading ? (
+                <div className="loading">Thinking...</div>
+              ) : (
+                <div className="assistant-message">
+                  {response}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <form className="chat-input-wrapper" onSubmit={handleSubmit}>
+        <form
+          className="chat-input-wrapper"
+          onSubmit={handleSubmit}
+        >
           <textarea
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             placeholder="Message the model..."
             rows={1}
+            disabled={loading}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
@@ -60,10 +118,10 @@ export default function ChatPage() {
             <button
               type="submit"
               className="send-button"
-              disabled={!message.trim()}
+              disabled={!message.trim() || loading}
               aria-label="Send message"
             >
-              ↑
+              {loading ? "..." : "↑"}
             </button>
           </div>
         </form>
