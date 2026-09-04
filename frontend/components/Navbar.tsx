@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  SignInButton,
+  SignUpButton,
+  UserButton,
+  Show,
+} from "@clerk/nextjs";
 import Logo from "./Logo";
 
 export default function Navbar() {
@@ -23,6 +29,20 @@ export default function Navbar() {
             Chat →
           </Link>
         )}
+
+        <Show when="signed-out">
+          <SignInButton mode="redirect">
+            <button className="nav-link">Sign In</button>
+          </SignInButton>
+
+          <SignUpButton mode="redirect">
+            <button className="nav-signup">Sign Up</button>
+          </SignUpButton>
+        </Show>
+
+        <Show when="signed-in">
+          <UserButton />
+        </Show>
       </nav>
     </header>
   );

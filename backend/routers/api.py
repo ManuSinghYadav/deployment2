@@ -1,13 +1,9 @@
-import os 
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 
 from config.settings import settings
 
-
-os.environ["OPENAI_API_KEY"] = settings.openai_api_key
 
 app = FastAPI()
 

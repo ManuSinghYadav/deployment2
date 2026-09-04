@@ -6,6 +6,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function ChatPage() {
   const [message, setMessage] = useState("");
+  const [submittedMessage, setSubmittedMessage] = useState("");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -18,8 +19,10 @@ export default function ChatPage() {
 
     if (!query || loading) return;
 
-    setLoading(true);
+    setSubmittedMessage(query);
+    setMessage("");
     setResponse("");
+    setLoading(true);
 
     try {
       const res = await fetch(`${API_URL}/query`, {
@@ -34,22 +37,18 @@ export default function ChatPage() {
 
       if (!res.ok) {
         const errorText = await res.text();
-      
+
         console.error("Backend error:", {
           status: res.status,
-          statusText: res.statusText,
           body: errorText,
         });
-      
-        throw new Error(
-          `Request failed: ${res.status} ${res.statusText}`
-        );
+
+        throw new Error(`Request failed: ${res.status}`);
       }
 
       const data = await res.json();
 
       setResponse(data);
-      setMessage("");
     } catch (error) {
       console.error("Chat request failed:", error);
       setResponse("Something went wrong. Please try again.");
@@ -63,8 +62,10 @@ export default function ChatPage() {
       <div className="chat-background" />
 
       <section className="chat-container">
+
+        {/* Messages */}
         <div className="chat-content">
-          {!response && !loading ? (
+          {!submittedMessage ? (
             <div className="welcome-message">
               <div className="welcome-icon">✦</div>
 
@@ -76,13 +77,15 @@ export default function ChatPage() {
               </p>
             </div>
           ) : (
-            <div className="response-container">
+            <div className="conversation">
               <div className="user-message">
-                {message}
+                {submittedMessage}
               </div>
 
               {loading ? (
-                <div className="loading">Thinking...</div>
+                <div className="loading">
+                  Thinking...
+                </div>
               ) : (
                 <div className="assistant-message">
                   {response}
@@ -92,6 +95,7 @@ export default function ChatPage() {
           )}
         </div>
 
+        {/* Input */}
         <form
           className="chat-input-wrapper"
           onSubmit={handleSubmit}
@@ -119,12 +123,12 @@ export default function ChatPage() {
               type="submit"
               className="send-button"
               disabled={!message.trim() || loading}
-              aria-label="Send message"
             >
               {loading ? "..." : "↑"}
             </button>
           </div>
         </form>
+
       </section>
     </main>
   );
